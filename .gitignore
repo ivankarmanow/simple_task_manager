@@ -1,0 +1,12 @@
+.env
+poetry.lock
+alembic.ini
+migrations/
+.vscode/
+.idea/
+__pycache__/
+front/dist/
+front/node_modules/
+front/index1.html
+front/index2.html
+front/README.md

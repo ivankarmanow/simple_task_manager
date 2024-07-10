@@ -1,0 +1,27 @@
+.fixed {
+    height: calc(100vh - 2rem);
+}
+
+li {
+    cursor: pointer;
+    list-style-type: none;
+    padding-left: .5em;
+}
+
+.open::marker {
+    content: "\F063";
+    font-family: FontAwesome;
+}
+
+.open {
+    padding-left: .5em;
+}
+
+.closed::marker {
+    content: "\f061";
+    font-family: FontAwesome;
+}
+
+.closed {
+    padding-left: .5em;
+}
