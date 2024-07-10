@@ -4,8 +4,11 @@
 Использованные инструменты:
 
 - FastAPI
+- OpenAPI (Swagger UI)
 - SQLAlchemy
 - Poetry
-- Redis
-- OAuth
+- Pytest
+- Vue.js 3
+- Bootstrap 5
+- Docker
 
