@@ -62,6 +62,7 @@ def test_create_task():
         assert db_obj.description == create_obj['description']
         assert db_obj.own_plan_time == create_obj['own_plan_time']
         assert db_obj.performers == create_obj['performers']
+    delete_task(data['task_id'])
 
 
 def test_delete_task():
