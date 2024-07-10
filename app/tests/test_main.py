@@ -22,14 +22,15 @@ def create_test_task(pid: int | None = None) -> int:
     }
     if pid:
         obj['parent_id'] = pid
-    response = client.post("/task/create", json=json.dumps(obj))
+    response = client.post("/task/create", json=obj)
     return response.json().get('task_id')
 
 
-def delete_task(task_id: int):
-    client.post("/task/delete", json=json.dumps({
-        "task_id": task_id
-    }))
+def delete_task(task_id: int) -> bool:
+    response = client.post("/task/delete", json={
+        "id": task_id
+    })
+    return response.json().get("status")
 
 
 class TestTask:
@@ -48,7 +49,7 @@ def test_create_task():
         "performers": "me",
         "own_plan_time": 100
     }
-    response = client.post("/task/create", json=json.dumps(create_obj))
+    response = client.post("/task/create", json=create_obj)
     assert response.status_code == 201
     data = response.json()
     assert data['status']
@@ -59,15 +60,15 @@ def test_create_task():
         assert db_obj
         assert db_obj.title == create_obj['title']
         assert db_obj.description == create_obj['description']
-        assert db_obj.owner == create_obj['own_plan_time']
+        assert db_obj.own_plan_time == create_obj['own_plan_time']
         assert db_obj.performers == create_obj['performers']
 
 
 def test_delete_task():
     task_id = create_test_task()
-    response = client.post("/task/delete", json=json.dumps({
-        "task_id": task_id
-    }))
+    response = client.post("/task/delete", json={
+        "id": task_id
+    })
     assert response.status_code == 202
     data = response.json()
     assert data['status']
@@ -76,27 +77,27 @@ def test_delete_task():
         assert db_task is None
     task_id = create_test_task()
     cht = create_test_task(task_id)
-    response = client.post("/task/delete", json=json.dumps({
-        "task_id": task_id
-    }))
+    response = client.post("/task/delete", json={
+        "id": task_id
+    })
     assert response.status_code == 400
     data = response.json()
     assert not data['status']
     assert data['error']['task_id'] == task_id
     delete_task(cht)
-    response = client.post("/task/delete", json=json.dumps({
-        "task_id": task_id
-    }))
+    delete_task(task_id)
+    response = client.post("/task/delete", json={
+        "id": task_id
+    })
     assert response.status_code == 404
     data = response.json()
     assert not data['status']
     assert data['error']['task_id'] == task_id
 
 
-
 def test_list_tasks():
     with TestTask() as task_id:
-        response = client.get("/tasks/list")
+        response = client.get("/task/list")
         data = response.json()
         assert response.status_code == 200
         assert "tasks" in data
@@ -106,13 +107,14 @@ def test_list_tasks():
         assert isinstance(data['tasks'][0]['title'], str)
         assert isinstance(data['tasks'][0]['folder'], bool)
         with Session() as session:
-            db_tasks = session.execute(select(Task.id, Task.title)).all()
-            api_tasks = {t['id']: t['title'] for t in data.tasks}
+            db_tasks = session.execute(select(Task.id, Task.title).where(Task.parent_id is None)).all()
+            api_tasks = {t['id']: t['title'] for t in data['tasks']}
             assert all(map(lambda x: x[0] in api_tasks and api_tasks[x[0]] == x[1], db_tasks))
 
 
 def test_get_task():
     with TestTask() as task_id:
+        print(f"/task/get/{task_id}")
         response = client.get(f"/task/get/{task_id}")
         assert response.status_code == 200
         data = response.json()
@@ -140,8 +142,11 @@ def test_get_task():
         assert data['performers'] == "me"
         assert data['own_plan_time'] == 100
         assert data['status'] == "assigned"
-        assert data['plan_time'] is None
-        assert (datetime.datetime.now() - data['created_at']) < datetime.timedelta(minutes=1)
+        assert data['plan_time'] == 100
+        assert data['own_real_time'] is None
+        assert data['real_time'] is None
+        assert (datetime.datetime.now() - datetime.datetime.strptime(data['created_at'], "%Y-%m-%dT%H:%M:%S.%f")) < datetime.timedelta(minutes=1)
+        # "2024-06-24T11:55:14.856811"
     response = client.get(f"/task/get/{task_id}")
     assert response.status_code == 404
     data = response.json()
@@ -157,8 +162,8 @@ def test_update_task():
             "performers": "me2",
             "own_plan_time": 200
         }
-        response = client.post("/task/update", json=json.dumps(new_task_obj))
-        assert response.status_code == 201
+        response = client.post("/task/update", json={"task_id": task_id, "task_input": new_task_obj})
+        assert response.status_code == 202
         data = response.json()
         assert data['status']
         with Session() as session:
@@ -168,7 +173,7 @@ def test_update_task():
             assert db_task.description == new_task_obj['description']
             assert db_task.performers == new_task_obj['performers']
             assert db_task.own_plan_time == new_task_obj['own_plan_time']
-    response = client.post("/task/update", json=json.dumps(new_task_obj))
+    response = client.post("/task/update", json={"task_id": task_id, "task_input": new_task_obj})
     assert response.status_code == 404
     data = response.json()
     assert not data['status']
@@ -189,12 +194,11 @@ def test_get_subtasks():
         assert isinstance(data['tasks'][0]['folder'], bool)
         with Session() as session:
             db_tasks = session.execute(select(Task.id, Task.title).where(Task.parent_id == task_id)).all()
-            api_tasks = {t['id']: t['title'] for t in data.tasks}
+            api_tasks = {t['id']: t['title'] for t in data['tasks']}
             assert all(map(lambda x: x[0] in api_tasks and api_tasks[x[0]] == x[1], db_tasks))
         for i in ids:
             delete_task(i)
 
-
-def test_set_status():
-    with TestTask() as task_id:
-        response = client.post("/task/status", json=json.dumps())
+# def test_set_status():
+#     with TestTask() as task_id:
+#         response = client.post("/task/status", json=json.dumps())

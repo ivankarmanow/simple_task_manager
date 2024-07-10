@@ -42,7 +42,7 @@ async def create_task(
 )
 async def delete_task(
         service: Annotated[TaskService, Depends(Stub(TaskService))],
-        task_id: Annotated[int, Body()],
+        task_id: TaskId,
 ) -> DefaultResponse:
     service.delete_task(task_id.id)
     return DefaultResponse()
