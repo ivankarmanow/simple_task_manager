@@ -22,7 +22,7 @@ services:
       - testnw
       - traefik-public
     ports:
-      - "8000:80"
+      - "8000:8000"
   frontend:
     build: ./front
 #    labels:
