@@ -15,9 +15,9 @@ services:
       dockerfile: ./app/Dockerfile
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
-    labels:
-      traefik.http.routers.backend.rule: PathPrefix(`/api`)
-      traefik.http.services.backend.loadbalancer.server.port: 8000
+#    labels:
+#      traefik.http.routers.backend.rule: PathPrefix(`/api`) && Host(`task-manager.karmanow.ru`)
+#      traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
       - traefik-public
