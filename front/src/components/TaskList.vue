@@ -7,7 +7,7 @@ const tasks = ref({})
 const updates = inject("updates")
 
 function fetchTaskList() {
-    fetch("http://127.0.0.1:8000/task/list")
+    fetch("api/task/list")
         .then(response => response.json())
         .then(data => {
             tasks.value = data.tasks

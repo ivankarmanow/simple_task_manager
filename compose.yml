@@ -1,0 +1,49 @@
+services:
+  proxy:
+    image: traefik:v3.0
+    command: --providers.docker --api.insecure=true
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-public
+  backend:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    environment:
+      DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
+    labels:
+      traefik.http.routers.backend.rule: PathPrefix(`/api`)
+    networks:
+      - testnw
+      - traefik-public
+    ports:
+      - "8000:80"
+  frontend:
+    build: ./front
+    labels:
+      traefik.http.routers.client.rule: Host(`localhost`)
+      traefik.http.services.frontend.loadbalancer.server.port: 80
+    networks:
+      - traefik-public
+  postgres:
+    image: postgres
+    volumes:
+      - task-manager:/var/lib/postgres
+    environment:
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_USER: ivan
+      POSTGRES_DB: test
+    networks:
+      - testnw
+    ports:
+      - 5432:5432
+volumes:
+  task-manager:
+networks:
+  testnw:
+  traefik-public:
+    external: true

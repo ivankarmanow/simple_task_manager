@@ -22,7 +22,7 @@ function addTask() {
     if (parent_id.value !== null) {
         createObj.parent_id = parent_id.value
     }
-    fetch("http://127.0.0.1:8000/task/create", {
+    fetch("api/task/create", {
         method: "POST",
         headers: {
             'Content-Type': "application/json;charset=utf-8"

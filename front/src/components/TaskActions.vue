@@ -5,9 +5,8 @@ import * as bootstrap from "bootstrap"
 const props = defineProps(['current_task'])
 const emit = defineEmits(['statusUpdated'])
 const folder = ref(false)
-// const error_text = ref("")
 function changeStatus(status) {
-    fetch("http://127.0.0.1:8000/task/status", {
+    fetch("api/task/status", {
         method: "POST",
         headers: {
             'Content-Type': "application/json;charset=utf-8"
@@ -29,13 +28,9 @@ function changeStatus(status) {
 }
 
 function fetchSubTasks() {
-    // fetch(`http://127.0.0.1:8000/task/get/${props.item.id}`)
-    //     .then(response => response.json())
-    //     .then(data => task.value = data)
-    // console.log(props.item.id)
     console.log(props)
     if (props.current_task !== null) {
-        fetch(`http://127.0.0.1:8000/task/subtasks/${props.current_task.id}`)
+        fetch(`api/task/subtasks/${props.current_task.id}`)
         .then(response => response.json())
         .then(data => data.tasks.length > 0 ? folder.value = true : folder.value = false)
     }

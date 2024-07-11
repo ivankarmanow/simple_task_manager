@@ -25,7 +25,7 @@ watch(() => props.currentTask, () => {
 })
 
 function editTask() {
-    fetch("http://127.0.0.1:8000/task/update", {
+    fetch("api/task/update", {
         method: "POST",
         headers: {
             'Content-Type': "application/json;charset=utf-8"

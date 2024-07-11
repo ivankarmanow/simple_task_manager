@@ -21,7 +21,7 @@ provide("updates", updates)
 function fetchCurrentTask(task_id) {
     current_task_id.value = task_id
     if (task_id > 0) {
-        fetch(`http://127.0.0.1:8000/task/get/${task_id}`)
+        fetch(`api/task/get/${task_id}`)
             .then(response => response.json())
             .then(data => current_task.value = data)
     } else {

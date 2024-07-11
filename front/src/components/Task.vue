@@ -3,9 +3,7 @@ import {inject, onMounted, ref, watch} from 'vue'
 
 const emit = defineEmits(['taskSelected'])
 const props = defineProps(['item'])
-// const updates = defineModel()
 const isOpen = ref(false)
-// const task = ref({})
 const subtasks = ref({})
 const updates = inject("updates")
 
@@ -16,16 +14,8 @@ function toggle(task_id) {
     emit("taskSelected", task_id)
 }
 
-// setInterval(() => {
-//     console.log(props.updates.value)
-// }, 1000)
-
 function fetchTask() {
-    // fetch(`http://127.0.0.1:8000/task/get/${props.item.id}`)
-    //     .then(response => response.json())
-    //     .then(data => task.value = data)
-    // console.log(props.item.id)
-    fetch(`http://127.0.0.1:8000/task/subtasks/${props.item.id}`)
+    fetch(`api/task/subtasks/${props.item.id}`)
         .then(response => response.json())
         .then(data => subtasks.value = data.tasks)
 }

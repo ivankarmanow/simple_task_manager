@@ -7,7 +7,7 @@ const updates = inject("updates")
 
 function deleteTask() {
     console.log(current_task_id.value)
-    fetch("http://127.0.0.1:8000/task/delete", {
+    fetch("api/task/delete", {
         method: "POST",
         headers: {
             'Content-Type': "application/json;charset=utf-8"
