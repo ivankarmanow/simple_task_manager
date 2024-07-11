@@ -16,7 +16,8 @@ services:
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
-      traefik.http.routers.backend.rule: Host(`91.224.87.148`) && PathPrefix(`/api`)
+      traefik.http.routers.backend.rule: PathPrefix(`/api`)
+      traefik.http.services.backend.loadbalancer.server.port: 80
     networks:
       - testnw
       - traefik-public
