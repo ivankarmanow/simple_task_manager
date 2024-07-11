@@ -3,8 +3,8 @@ services:
     image: traefik:v3.0
     command: --providers.docker --api.insecure=true
     ports:
-      - 80:80
-      - 8080:8080
+      - "80:80"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -25,7 +25,7 @@ services:
   frontend:
     build: ./front
     labels:
-      traefik.http.routers.client.rule: Host(`localhost`)
+      traefik.http.routers.client.rule: Path(`/`)
       traefik.http.services.frontend.loadbalancer.server.port: 80
     networks:
       - traefik-public
