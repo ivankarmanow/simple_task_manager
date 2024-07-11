@@ -18,6 +18,6 @@ RUN pip install --no-cache-dir --upgrade -r /backend/requirements.txt
 
 COPY ./app /backend/app
 
-EXPOSE 80
+EXPOSE 8000
 
-CMD ["uvicorn", "--factory", "app.main:create_app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "--factory", "app.main:create_app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
