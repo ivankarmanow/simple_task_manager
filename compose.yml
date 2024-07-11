@@ -16,7 +16,7 @@ services:
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
-      traefik.http.routers.backend.rule: Host(`91.224.87.148`)
+      traefik.http.routers.backend.rule: Host(`91.224.87.148`) && PathPrefix(`/api`)
       traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
@@ -25,9 +25,9 @@ services:
       - "8000:8000"
   frontend:
     build: ./front
-#    labels:
-#      traefik.http.routers.frontend.rule: Host(`91.224.87.148`)
-#      traefik.http.services.frontend.loadbalancer.server.port: 80
+    labels:
+      traefik.http.routers.frontend.rule: Host(`91.224.87.148`)
+      traefik.http.services.frontend.loadbalancer.server.port: 80
     networks:
       - traefik-public
   postgres:
