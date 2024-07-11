@@ -16,7 +16,7 @@ services:
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
-      traefik.http.routers.backend.rule: PathRegexp(`.*`)
+      traefik.http.routers.backend.rule: PathRegexp(`^.*$`)
       traefik.http.services.backend.loadbalancer.server.port: 80
     networks:
       - testnw
