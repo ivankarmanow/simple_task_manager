@@ -9,7 +9,6 @@ services:
       - "--entryPoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
       - "--certificatesresolvers.myresolver.acme.email=ivan@karmanow.ru"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
@@ -31,8 +30,6 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.backend.rule: PathPrefix(`/api`) && Host(`task-manager.karmanow.ru`)
-      traefik.http.routers.whoami.entrypoints: websecure
-      traefik.http.routers.whoami.tls.certresolver: myresolver
 #      traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
@@ -43,8 +40,11 @@ services:
     build: ./front
     container_name: frontend
     labels:
+      traefik.enable: true
       traefik.http.routers.frontend.rule: Host(`task-manager.karmanow.ru`)
       traefik.http.services.frontend.loadbalancer.server.port: 80
+      traefik.http.routers.frontend.entrypoints: websecure
+      traefik.http.routers.frontend.tls.certresolver: myresolver
     networks:
       - traefik-public
   postgres:
