@@ -16,18 +16,18 @@ services:
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
-      traefik.http.routers.backend.rule: PathRegexp(`^.*$`)
-      traefik.http.services.backend.loadbalancer.server.port: 8000
+      traefik.http.routers.backend.rule: Method(`get`)
+#      traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
       - traefik-public
-    ports:
-      - "8000:80"
+#    ports:
+#      - "8000:80"
   frontend:
     build: ./front
-    labels:
+#    labels:
 #      traefik.http.routers.frontend.rule:
-      traefik.http.services.frontend.loadbalancer.server.port: 80
+#      traefik.http.services.frontend.loadbalancer.server.port: 80
     networks:
       - traefik-public
   postgres:
