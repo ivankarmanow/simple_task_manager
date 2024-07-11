@@ -15,18 +15,18 @@ services:
       dockerfile: ./app/Dockerfile
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
-    labels:
-      traefik.http.routers.backend.rule: Method(`GET`)
-      traefik.http.services.backend.loadbalancer.server.port: 8000
+#    labels:
+#      traefik.http.routers.backend.rule: Method(`GET`)
+#      traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
       - traefik-public
-#    ports:
-#      - "8000:80"
+    ports:
+      - "8000:80"
   frontend:
     build: ./front
-#    labels:
-#      traefik.http.routers.frontend.rule:
+    labels:
+      traefik.http.routers.frontend.rule: Host(`91.224.87.148`)
 #      traefik.http.services.frontend.loadbalancer.server.port: 80
     networks:
       - traefik-public
