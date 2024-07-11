@@ -16,8 +16,8 @@ services:
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
-      traefik.http.routers.backend.rule: Method(`get`)
-#      traefik.http.services.backend.loadbalancer.server.port: 8000
+      traefik.http.routers.backend.rule: Method(`GET`)
+      traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
       - traefik-public
