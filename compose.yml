@@ -9,20 +9,20 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - traefik-public
-    backend:
-      build:
-        context: .
-        dockerfile: ./app/Dockerfile
-      environment:
-        DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
-      labels:
-        traefik.http.routers.backend.rule: PathPrefix(`/api`) && Host(`task-manager.karmanow.ru`)
+  backend:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    environment:
+      DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
+    labels:
+      traefik.http.routers.backend.rule: PathPrefix(`/api`) && Host(`task-manager.karmanow.ru`)
       #      traefik.http.services.backend.loadbalancer.server.port: 8000
-      networks:
-        - testnw
-        - traefik-public
-      ports:
-        - 8000:8000
+    networks:
+      - testnw
+      - traefik-public
+    ports:
+      - 8000:8000
   frontend:
     build: ./front
     container_name: frontend
