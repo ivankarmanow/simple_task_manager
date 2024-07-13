@@ -49,7 +49,7 @@ class TaskService:
         else:
             if self.db.has_subtasks(task_id):
                 for t in self.db.get_subtasks(task_id):
-                    subta = self.db.get_task(t.id)
+                    subta = self.get_task(t.id)
                     task.plan_time += subta.plan_time
                     if task.status == TaskStatus.COMPLETED and subta.status == TaskStatus.COMPLETED:
                             task.real_time += subta.real_time
