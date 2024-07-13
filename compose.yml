@@ -21,7 +21,7 @@ services:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
       traefik.http.routers.backend.rule: PathPrefix(`/api`) && Host(`task-manager.karmanow.ru`)
-#      traefik.http.services.backend.loadbalancer.server.port: 8000
+      traefik.http.services.backend.loadbalancer.server.port: 8000
     networks:
       - testnw
       - traefik-public
@@ -31,7 +31,7 @@ services:
     build: ./front
     container_name: frontend
     labels:
-      traefik.http.routers.frontend.rule: PathPrefix(`/meme/`) && Host(`task-manager.karmanow.ru`)
+      traefik.http.routers.frontend.rule: Host(`task-manager.karmanow.ru`)
       traefik.http.services.frontend.loadbalancer.server.port: 80
     networks:
       - traefik-public
