@@ -6,6 +6,7 @@ services:
     command:
       - "--providers.docker"
       - "--api.insecure=true"
+      - "--provider.docker.network=traefik-public"
       - "--entryPoints.web.address=:80"
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
@@ -71,4 +72,5 @@ volumes:
 networks:
   testnw:
   traefik-public:
+    name: traefik-public
 #    external: true
