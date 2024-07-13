@@ -23,7 +23,7 @@ const statuses = {
         <p><b class="fs-4">Создано: </b>{{ formatter.format(new Date(current_task.created_at)) }}</p>
         <p><b class="fs-4">Статус задачи: </b>{{ statuses[current_task.status] }}</p>
         <p><b class="fs-4">Плановая трудоёмкость: </b>{{ current_task.own_plan_time }} часов</p>
-        <p><b class="fs-4">Плановая трудоёмкость
+        <p v-if="current_task.plan_time !== current_task.own_plan_time"><b class="fs-4">Плановая трудоёмкость
             подзадач: </b>{{ (current_task.plan_time - current_task.own_plan_time) }} часов</p>
         <p v-if="current_task.status === 'completed'"><b class="fs-4">Фактическое время
             выполнения: </b>{{ current_task.own_real_time }} часов</p>
