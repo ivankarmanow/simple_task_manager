@@ -22,12 +22,12 @@ def create_test_task(pid: int | None = None) -> int:
     }
     if pid:
         obj['parent_id'] = pid
-    response = client.post("/task/create", json=obj)
+    response = client.post("/api/task/create", json=obj)
     return response.json().get('task_id')
 
 
 def delete_task(task_id: int) -> bool:
-    response = client.post("/task/delete", json={
+    response = client.post("/api/task/delete", json={
         "id": task_id
     })
     return response.json().get("status")
@@ -49,7 +49,7 @@ def test_create_task():
         "performers": "me",
         "own_plan_time": 100
     }
-    response = client.post("/task/create", json=create_obj)
+    response = client.post("/api/task/create", json=create_obj)
     assert response.status_code == 201
     data = response.json()
     assert data['status']
@@ -67,7 +67,7 @@ def test_create_task():
 
 def test_delete_task():
     task_id = create_test_task()
-    response = client.post("/task/delete", json={
+    response = client.post("/api/task/delete", json={
         "id": task_id
     })
     assert response.status_code == 202
@@ -78,7 +78,7 @@ def test_delete_task():
         assert db_task is None
     task_id = create_test_task()
     cht = create_test_task(task_id)
-    response = client.post("/task/delete", json={
+    response = client.post("/api/task/delete", json={
         "id": task_id
     })
     assert response.status_code == 400
@@ -87,7 +87,7 @@ def test_delete_task():
     assert data['error']['task_id'] == task_id
     delete_task(cht)
     delete_task(task_id)
-    response = client.post("/task/delete", json={
+    response = client.post("/api/task/delete", json={
         "id": task_id
     })
     assert response.status_code == 404
@@ -98,7 +98,7 @@ def test_delete_task():
 
 def test_list_tasks():
     with TestTask() as task_id:
-        response = client.get("/task/list")
+        response = client.get("/api/task/list")
         data = response.json()
         assert response.status_code == 200
         assert "tasks" in data
@@ -115,8 +115,8 @@ def test_list_tasks():
 
 def test_get_task():
     with TestTask() as task_id:
-        print(f"/task/get/{task_id}")
-        response = client.get(f"/task/get/{task_id}")
+        print(f"/api/task/get/{task_id}")
+        response = client.get(f"/api/task/get/{task_id}")
         assert response.status_code == 200
         data = response.json()
         fields = (
@@ -148,7 +148,7 @@ def test_get_task():
         assert data['real_time'] is None
         assert (datetime.datetime.now() - datetime.datetime.strptime(data['created_at'], "%Y-%m-%dT%H:%M:%S.%f")) < datetime.timedelta(minutes=1)
         # "2024-06-24T11:55:14.856811"
-    response = client.get(f"/task/get/{task_id}")
+    response = client.get(f"/api/task/get/{task_id}")
     assert response.status_code == 404
     data = response.json()
     assert not data['status']
@@ -163,7 +163,7 @@ def test_update_task():
             "performers": "me2",
             "own_plan_time": 200
         }
-        response = client.post("/task/update", json={"task_id": task_id, "task_input": new_task_obj})
+        response = client.post("/api/task/update", json={"task_id": task_id, "task_input": new_task_obj})
         assert response.status_code == 202
         data = response.json()
         assert data['status']
@@ -174,7 +174,7 @@ def test_update_task():
             assert db_task.description == new_task_obj['description']
             assert db_task.performers == new_task_obj['performers']
             assert db_task.own_plan_time == new_task_obj['own_plan_time']
-    response = client.post("/task/update", json={"task_id": task_id, "task_input": new_task_obj})
+    response = client.post("/api/task/update", json={"task_id": task_id, "task_input": new_task_obj})
     assert response.status_code == 404
     data = response.json()
     assert not data['status']
@@ -184,7 +184,7 @@ def test_update_task():
 def test_get_subtasks():
     with TestTask() as task_id:
         ids = [create_test_task(task_id) for i in range(5)]
-        response = client.get(f"/task/subtasks/{task_id}")
+        response = client.get(f"/api/task/subtasks/{task_id}")
         assert response.status_code == 200
         data = response.json()
         assert "tasks" in data
