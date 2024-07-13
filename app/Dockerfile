@@ -21,4 +21,4 @@ COPY ./app /backend/app
 EXPOSE 8000
 
 #CMD ["uvicorn", "--factory", "app.main:create_app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
-CMD ["fastapi", "run", "app/main", "-root-path", "/api"]
+CMD ["fastapi", "run", "app/main", "--root-path", "/api"]
