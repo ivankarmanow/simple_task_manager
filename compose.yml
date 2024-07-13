@@ -3,12 +3,24 @@ name: task
 services:
   proxy:
     image: traefik:v3.0
-    command: --providers.docker --api.insecure=true
+    command:
+      "--providers.docker"
+      "--api.insecure=true"
+      "--providers.docker.defaultRule=Host(`task-manager.karmanow.ru`)"
+      "--entryPoints.web.address=:80"
+      "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      "--entryPoints.websecure.address=:443"
+      "--certificatesresolvers.myresolver.acme.email=ivan@karmanow.ru"
+      "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
     container_name: traefik
     ports:
       - 80:80
+      - 443:443
       - 8080:8080
     volumes:
+      - "./letsencrypt:/letsencrypt"
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - traefik-public
@@ -20,8 +32,10 @@ services:
     environment:
       DB_URI: postgresql+psycopg://ivan:secret123@postgres/test
     labels:
-      traefik.http.routers.backend.rule: PathPrefix(`/api`) && Host(`task-manager.karmanow.ru`)
+      traefik.http.routers.backend.rule: PathPrefix(`/api`)
       traefik.http.services.backend.loadbalancer.server.port: 8000
+      traefik.http.routers.backend.tls: true
+      traefik.http.routers.backend.tls.certresolver: myresolver
     networks:
       - testnw
       - traefik-public
@@ -33,6 +47,8 @@ services:
     labels:
       traefik.http.routers.frontend.rule: Host(`task-manager.karmanow.ru`)
       traefik.http.services.frontend.loadbalancer.server.port: 80
+      traefik.http.routers.frontend.tls: true
+      traefik.http.routers.frontend.tls.certresolver: myresolver
     networks:
       - traefik-public
   postgres:
