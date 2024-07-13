@@ -1,14 +1,14 @@
 import datetime
-import json
+from contextlib import contextmanager
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.db.sqlalchemy.models import Task
 from app.main.di import create_session_maker
-from app.main.web import create_app
+from app.main.web import app
+from app.models import TaskStatus
 
-app = create_app()
 Session = create_session_maker()
 client = TestClient(app)
 
@@ -18,28 +18,61 @@ def create_test_task(pid: int | None = None) -> int:
         "title": "Test task 1",
         "description": "test description",
         "performers": "me",
-        "own_plan_time": 100
+        "own_plan_time": 100,
+        "parent_id": pid
     }
-    if pid:
-        obj['parent_id'] = pid
-    response = client.post("/api/task/create", json=obj)
-    return response.json().get('task_id')
+    task = Task(**obj)
+    with Session() as session:
+        session.add(task)
+        session.commit()
+        return task.id
 
 
-def delete_task(task_id: int) -> bool:
-    response = client.post("/api/task/delete", json={
-        "id": task_id
+def delete_task(task_id: int) -> None:
+    with Session() as session:
+        session.delete(session.get(Task, task_id))
+        session.commit()
+
+
+def same_time(timestamp: str | datetime.datetime) -> bool:
+    if isinstance(timestamp, str):
+        timestamp = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+    return (datetime.datetime.now() - timestamp) < datetime.timedelta(minutes=1)
+
+
+def transition(task_id: int, from_: TaskStatus, to: TaskStatus) -> tuple[bool, Task | None]:
+    response = client.post("/task/status", json={
+        "task_id": task_id,
+        "status": to
     })
-    return response.json().get("status")
+    data = response.json()
+    if response.status_code == 200:
+        assert data['status']
+        with Session() as session:
+            db_task = session.get(Task, task_id)
+            assert db_task.status == to
+        return True, db_task
+    elif response.status_code == 400:
+        assert not data['status']
+        assert data['error']['task_id'] == task_id
+        if data['error']['type'] == "InvalidStatusTransition":
+            assert data['error']['transition']['from'] == from_
+            assert data['error']['transition']['to'] == to
+        return False, None
+    else:
+        assert False, f"Invalid response code: {response.status_code}"
 
 
-class TestTask:
-    def __enter__(self):
-        self.task_id = create_test_task()
-        return self.task_id
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        delete_task(self.task_id)
+@contextmanager
+def TestTask(*args):
+    pid = None
+    if args:
+        pid = args[0]
+    task_id = create_test_task(pid)
+    try:
+        yield task_id
+    finally:
+        delete_task(task_id)
 
 
 def test_create_task():
@@ -49,7 +82,7 @@ def test_create_task():
         "performers": "me",
         "own_plan_time": 100
     }
-    response = client.post("/api/task/create", json=create_obj)
+    response = client.post("/task/create", json=create_obj)
     assert response.status_code == 201
     data = response.json()
     assert data['status']
@@ -67,7 +100,7 @@ def test_create_task():
 
 def test_delete_task():
     task_id = create_test_task()
-    response = client.post("/api/task/delete", json={
+    response = client.post("/task/delete", json={
         "id": task_id
     })
     assert response.status_code == 202
@@ -76,18 +109,16 @@ def test_delete_task():
     with Session() as session:
         db_task = session.get(Task, task_id)
         assert db_task is None
-    task_id = create_test_task()
-    cht = create_test_task(task_id)
-    response = client.post("/api/task/delete", json={
-        "id": task_id
-    })
-    assert response.status_code == 400
-    data = response.json()
-    assert not data['status']
-    assert data['error']['task_id'] == task_id
-    delete_task(cht)
-    delete_task(task_id)
-    response = client.post("/api/task/delete", json={
+    with TestTask() as task_id:
+        with TestTask(task_id) as cht:
+            response = client.post("/task/delete", json={
+                "id": task_id
+            })
+            assert response.status_code == 400
+            data = response.json()
+            assert not data['status']
+            assert data['error']['task_id'] == task_id
+    response = client.post("/task/delete", json={
         "id": task_id
     })
     assert response.status_code == 404
@@ -98,7 +129,7 @@ def test_delete_task():
 
 def test_list_tasks():
     with TestTask() as task_id:
-        response = client.get("/api/task/list")
+        response = client.get("/task/list")
         data = response.json()
         assert response.status_code == 200
         assert "tasks" in data
@@ -115,8 +146,7 @@ def test_list_tasks():
 
 def test_get_task():
     with TestTask() as task_id:
-        print(f"/api/task/get/{task_id}")
-        response = client.get(f"/api/task/get/{task_id}")
+        response = client.get(f"/task/get/{task_id}")
         assert response.status_code == 200
         data = response.json()
         fields = (
@@ -146,9 +176,14 @@ def test_get_task():
         assert data['plan_time'] == 100
         assert data['own_real_time'] is None
         assert data['real_time'] is None
-        assert (datetime.datetime.now() - datetime.datetime.strptime(data['created_at'], "%Y-%m-%dT%H:%M:%S.%f")) < datetime.timedelta(minutes=1)
+        assert same_time(data['created_at'])
+        with TestTask(task_id):
+            response = client.get(f"/task/get/{task_id}")
+            assert response.status_code == 200
+            data = response.json()
+            assert data['plan_time'] == 200
         # "2024-06-24T11:55:14.856811"
-    response = client.get(f"/api/task/get/{task_id}")
+    response = client.get(f"/task/get/{task_id}")
     assert response.status_code == 404
     data = response.json()
     assert not data['status']
@@ -163,7 +198,7 @@ def test_update_task():
             "performers": "me2",
             "own_plan_time": 200
         }
-        response = client.post("/api/task/update", json={"task_id": task_id, "task_input": new_task_obj})
+        response = client.post("/task/update", json={"task_id": task_id, "task_input": new_task_obj})
         assert response.status_code == 202
         data = response.json()
         assert data['status']
@@ -174,7 +209,7 @@ def test_update_task():
             assert db_task.description == new_task_obj['description']
             assert db_task.performers == new_task_obj['performers']
             assert db_task.own_plan_time == new_task_obj['own_plan_time']
-    response = client.post("/api/task/update", json={"task_id": task_id, "task_input": new_task_obj})
+    response = client.post("/task/update", json={"task_id": task_id, "task_input": new_task_obj})
     assert response.status_code == 404
     data = response.json()
     assert not data['status']
@@ -184,7 +219,7 @@ def test_update_task():
 def test_get_subtasks():
     with TestTask() as task_id:
         ids = [create_test_task(task_id) for i in range(5)]
-        response = client.get(f"/api/task/subtasks/{task_id}")
+        response = client.get(f"/task/subtasks/{task_id}")
         assert response.status_code == 200
         data = response.json()
         assert "tasks" in data
@@ -200,6 +235,68 @@ def test_get_subtasks():
         for i in ids:
             delete_task(i)
 
-# def test_set_status():
-#     with TestTask() as task_id:
-#         response = client.post("/task/status", json=json.dumps())
+
+def test_status_transitions():
+    with TestTask() as task_id:
+        with Session() as session:
+            db_task = session.get(Task, task_id)
+            assert db_task.status == TaskStatus.ASSIGNED
+            assert db_task.own_real_time is None
+            assert db_task.started_at is None
+            assert db_task.completed_at is None
+            assert db_task.last_paused_at is None
+            assert db_task.pause_time == 0
+            current_status = TaskStatus.ASSIGNED
+        assert not transition(task_id, current_status, TaskStatus.PAUSED)[0]
+        assert not transition(task_id, current_status, TaskStatus.COMPLETED)[0]
+        res, db_task = transition(task_id, current_status, TaskStatus.IN_PROGRESS)
+        assert res
+        assert same_time(db_task.started_at)
+        current_status = TaskStatus.IN_PROGRESS
+        assert not transition(task_id, current_status, TaskStatus.ASSIGNED)[0]
+        res, db_task = transition(task_id, current_status, TaskStatus.PAUSED)
+        assert res
+        assert same_time(db_task.last_paused_at)
+        current_status = TaskStatus.PAUSED
+        assert not transition(task_id, current_status, TaskStatus.ASSIGNED)[0]
+        res, db_task = transition(task_id, current_status, TaskStatus.IN_PROGRESS)
+        assert res
+        assert db_task.last_paused_at is None
+        current_status = TaskStatus.IN_PROGRESS
+        res, db_task = transition(task_id, current_status, TaskStatus.COMPLETED)
+        assert res
+        assert same_time(db_task.completed_at)
+        assert db_task.own_real_time is not None
+        current_status = TaskStatus.COMPLETED
+        assert not transition(task_id, current_status, TaskStatus.ASSIGNED)[0]
+        assert not transition(task_id, current_status, TaskStatus.PAUSED)[0]
+        assert not transition(task_id, current_status, TaskStatus.IN_PROGRESS)[0]
+    with TestTask() as task_id:
+        assert transition(task_id, TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS)[0]
+        with TestTask(task_id) as cht:
+            assert not transition(task_id, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED)[0]
+            assert transition(cht, TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS)[0]
+            assert transition(task_id, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED)[0]
+
+
+def test_time_calculations():
+    with TestTask() as task_id:
+        res, db_task = transition(task_id, TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS)
+        assert res
+        db_task.started_at = db_task.started_at - datetime.timedelta(hours=12, minutes=12)
+        with Session() as session:
+            session.add(db_task)
+            session.commit()
+        res, db_task = transition(task_id, TaskStatus.IN_PROGRESS, TaskStatus.PAUSED)
+        assert res
+        db_task.last_paused_at = db_task.last_paused_at - datetime.timedelta(hours=5, minutes=5)
+        with Session() as session:
+            session.add(db_task)
+            session.commit()
+        res, db_task = transition(task_id, TaskStatus.PAUSED, TaskStatus.IN_PROGRESS)
+        assert res
+        assert db_task.pause_time == 5
+        res, db_task = transition(task_id, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED)
+        assert res
+        assert db_task.own_real_time == 7
+

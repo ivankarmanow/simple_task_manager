@@ -114,4 +114,4 @@ class TaskService:
                 self.db.set_status(task_id, status)
                 self.uow.commit()
             else:
-                raise InvalidStatusTransition(transition)
+                raise InvalidStatusTransition(task_id, transition)

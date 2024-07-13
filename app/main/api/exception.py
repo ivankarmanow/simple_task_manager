@@ -51,6 +51,7 @@ async def invalid_status_transition_handler(request: Request, e: InvalidStatusTr
             "status": False,
             "error": {
                 "type": e.__class__.__name__,
+                "task_id": e.task_id,
                 "transition": {
                     "from": e.transition[0],
                     "to": e.transition[1],
