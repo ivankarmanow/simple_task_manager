@@ -47,13 +47,14 @@ class TaskService:
         if task is None:
             raise TaskNotFound(task_id)
         else:
+            print(f"{'-'*task_id}Задача {task_id}----")
             if self.db.has_subtasks(task_id):
                 for t in self.db.get_subtasks(task_id):
                     subta = self.get_task(t.id)
-                    print(f"{t.id} - {subta.plan_time}")
                     task.plan_time += subta.plan_time
                     if task.status == TaskStatus.COMPLETED and subta.status == TaskStatus.COMPLETED:
                             task.real_time += subta.real_time
+            print(f"{'-'*task_id}Задача {task_id} = {task.plan_time}----")
             return task
 
     def get_subtasks(self, task_id: int) -> list[TaskStub]:
