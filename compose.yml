@@ -4,16 +4,16 @@ services:
   proxy:
     image: traefik:v3.0
     command:
-      "--providers.docker"
-      "--api.insecure=true"
-      "--providers.docker.defaultRule=Host(`task-manager.karmanow.ru`)"
-      "--entryPoints.web.address=:80"
-      "--entryPoints.web.http.redirections.entryPoint.to=websecure"
-      "--entryPoints.web.http.redirections.entryPoint.scheme=https"
-      "--entryPoints.websecure.address=:443"
-      "--certificatesresolvers.myresolver.acme.email=ivan@karmanow.ru"
-      "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--providers.docker"
+      - "--api.insecure=true"
+      - "--providers.docker.defaultRule=Host(`task-manager.karmanow.ru`)"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.email=ivan@karmanow.ru"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
     container_name: traefik
     ports:
       - 80:80
