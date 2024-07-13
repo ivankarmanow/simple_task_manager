@@ -36,6 +36,8 @@ services:
       traefik.http.services.backend.loadbalancer.server.port: 8000
       traefik.http.routers.backend.tls: true
       traefik.http.routers.backend.tls.certresolver: myresolver
+      traefik.http.middlewares.stripp.stripprefix.prefixes: /api
+      traefik.http.routers.backend.middlewares: stripp@docker
     networks:
       - testnw
       - traefik-public
