@@ -1,5 +1,5 @@
-from .web import create_app
+from .web import app
 
 __all__ = [
-    "create_app"
+    "app"
 ]

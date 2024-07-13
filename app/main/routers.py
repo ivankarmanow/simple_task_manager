@@ -12,11 +12,11 @@ def init_routers(app: FastAPI):
     app.add_exception_handler(InvalidStatusTransition, invalid_status_transition_handler)
     app.add_exception_handler(TaskCannotBeDeleted, task_cannot_be_deleted_handler)
     app.add_exception_handler(TaskCannotBeCompleted, task_cannot_be_completed)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=['*'],
-        allow_credentials=True,
-        allow_methods=['*'],
-        allow_headers=['*'],
-    )
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=['*'],
+    #     allow_credentials=True,
+    #     allow_methods=['*'],
+    #     allow_headers=['*'],
+    # )
 
